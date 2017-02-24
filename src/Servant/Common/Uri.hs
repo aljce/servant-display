@@ -57,7 +57,7 @@ performAjax start rest = do
     Right a -> return (Right a)
   where note e Nothing  = Left e
         note _ (Just x) = Right x
-        headers = def { _xhrRequestConfig_headers = "Content-type" =: "application/json" }
+        headers = def { _xhrRequestConfig_headers = "Accept" =: "application/json" }
 
 uriState :: (MonadWidget t m) => m (Dynamic t (U.URIRef U.Absolute))
 uriState = do

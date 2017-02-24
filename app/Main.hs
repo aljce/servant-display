@@ -25,9 +25,8 @@ runGUI :: forall t m. MonadWidget t m => m ()
 runGUI = do
   (Right uri) <- return (U.parseURI U.laxURIParserOptions "http://localhost:8080")
   liftIO (putStrLn "Before serve")
-  -- uriState >>= R.display
   el "div" $ text "Reflex single page app!"
-  changes <- serve (Proxy @API) (pure uri) $ \(jumpOne :<|> jumpAll :<|> jumpHome) ->
+  changes <- serve (Proxy @API) (pure uri) $ \(jumpAll :<|> jumpOne :<|> jumpHome) ->
     displayAll jumpOne :<|> displayOne jumpAll :<|> index jumpOne
   -- (count changes :: m (Dynamic t Int)) >>= R.display
   return ()

@@ -1,25 +1,25 @@
-{ nixpkgs ? import <nixpkgs> {}, compiler ? "default" }:
-
-let
-
-  inherit (nixpkgs) pkgs;
-
-  f = { mkDerivation, base, stdenv }:
-      mkDerivation {
-        pname = "servant-display";
-        version = "0.1.0.0";
-        src = ./.;
-        libraryHaskellDepends = [ base ];
-        description = "Reactive Web Applications with servant and reflex";
-        license = stdenv.lib.licenses.mit;
-      };
-
-  haskellPackages = if compiler == "default"
-                       then pkgs.haskellPackages
-                       else pkgs.haskell.packages.${compiler};
-
-  drv = haskellPackages.callPackage f {};
-
-in
-
-  if pkgs.lib.inNixShell then drv.env else drv
+{ test ? "true" }:
+let bootstrap = import <nixpkgs> {};
+    reflex-platform-commit = builtins.fromJSON (builtins.readFile ./reflex-platform.json);
+    reflex-platform-src = bootstrap.fetchFromGitHub {
+      owner = "reflex-frp";
+      repo  = "reflex-platform";
+      inherit (reflex-platform-commit) rev sha256;
+    };
+    reflex-platform = import reflex-platform-src {};
+    parseBool = str: with builtins;
+      let json = fromJSON str; in if isBool json then json else throw "parseBool: ${str} is not a bool";
+    overrides = reflex-platform.ghcjs.override {
+      overrides = self: super:
+        with reflex-platform; with self;
+        let testFun  = if parseBool test then x: x else lib.dontCheck;
+        in {
+          # servant-reflex = callPackage ./deps/servant-reflex.nix {};
+          servant-display = testFun (callPackage (cabal2nixResult ./.) {});
+        };
+    };
+    drv = overrides.servant-display;
+in if reflex-platform.nixpkgs.lib.inNixShell then
+  reflex-platform.workOn overrides drv
+else
+  drv
